@@ -9,6 +9,6 @@
  *   Vazio = o botão "Avaliar o app" não aparece.
  */
 const CONFIG = {
-  LOG_ENDPOINT: '',
+  LOG_ENDPOINT: 'https://script.google.com/macros/s/AKfycbzSK2zLbteWvZME_uAuADyI8sfLL8tyux1rL4wDNI0ZMy1tNAc8DE5cKMjOE87kUZds5g/exec',
   FEEDBACK_URL: ''
 };
