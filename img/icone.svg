@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Caixa Fácil">
+  <rect width="64" height="64" rx="14" fill="#0b6e4f"/>
+  <rect x="14" y="14" width="26" height="12" rx="2" fill="#e3f4ec"/>
+  <rect x="10" y="30" width="44" height="22" rx="4" fill="#ffffff"/>
+  <rect x="16" y="35" width="6" height="4" rx="1" fill="#0b6e4f"/>
+  <rect x="26" y="35" width="6" height="4" rx="1" fill="#0b6e4f"/>
+  <rect x="36" y="35" width="12" height="4" rx="1" fill="#f2b705"/>
+  <rect x="16" y="43" width="32" height="4" rx="1" fill="#0b6e4f"/>
+  <path d="M19 20h16" stroke="#0b6e4f" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

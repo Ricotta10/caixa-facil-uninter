@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caixa Fácil — controle de vendas para pequenos empreendedores</title>
+  <meta name="description" content="Ferramenta gratuita para pequenos empreendedores controlarem vendas, estoque, clientes e fiado direto no celular.">
+  <meta name="theme-color" content="#0b6e4f">
+  <link rel="icon" href="img/icone.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+  <!-- ============================ ENTRADA ============================ -->
+  <main id="tela-entrada" class="entrada" hidden>
+    <div class="entrada-caixa">
+      <img src="img/icone.svg" alt="" class="entrada-logo" width="64" height="64">
+      <h1>Caixa Fácil</h1>
+      <p class="entrada-sub">Controle suas vendas, estoque, clientes e fiado de um jeito simples, direto no celular. Gratuito e sem cadastro.</p>
+
+      <form id="form-entrada" novalidate>
+        <div class="campo">
+          <label for="entrada-nome">Seu nome</label>
+          <input id="entrada-nome" name="nome" type="text" autocomplete="name" maxlength="60" required>
+        </div>
+        <div class="campo">
+          <label for="entrada-negocio">O que você vende?</label>
+          <select id="entrada-negocio" name="negocio">
+            <option value="">Prefiro não informar</option>
+            <option>Alimentação (doces, salgados, marmitas)</option>
+            <option>Cosméticos e perfumaria</option>
+            <option>Roupas e acessórios</option>
+            <option>Artesanato</option>
+            <option>Serviços (beleza, consertos, aulas…)</option>
+            <option>Outro tipo de negócio</option>
+            <option>Não vendo nada, só estou testando</option>
+          </select>
+        </div>
+        <div class="campo campo-check">
+          <input id="entrada-aceite" name="aceite" type="checkbox" required>
+          <label for="entrada-aceite">Concordo que meu <strong>nome</strong> e a <strong>data e hora</strong> dos meus acessos sejam registrados para fins acadêmicos (projeto de extensão UNINTER). Meus produtos, vendas e clientes ficam salvos <strong>somente neste aparelho</strong>.</label>
+        </div>
+        <button type="submit" class="botao botao-primario botao-grande">Entrar</button>
+      </form>
+    </div>
+  </main>
+
+  <!-- ============================ APLICATIVO ============================ -->
+  <div id="app" hidden>
+    <header class="topo">
+      <div class="topo-linha">
+        <a href="#painel" class="marca" data-ir="painel">
+          <img src="img/icone.svg" alt="" width="32" height="32">
+          <span>Caixa Fácil</span>
+        </a>
+        <div class="topo-acoes">
+          <button type="button" class="botao-icone" id="fonte-menor" aria-label="Diminuir o tamanho do texto" title="Diminuir texto">A−</button>
+          <button type="button" class="botao-icone" id="fonte-maior" aria-label="Aumentar o tamanho do texto" title="Aumentar texto">A+</button>
+          <button type="button" class="botao-icone" id="contraste" aria-pressed="false" aria-label="Alto contraste" title="Alto contraste">◐</button>
+          <button type="button" class="botao-icone" id="sair" aria-label="Sair" title="Sair">Sair</button>
+        </div>
+      </div>
+      <p class="saudacao" id="saudacao"></p>
+      <nav class="abas" aria-label="Seções do aplicativo">
+        <button type="button" data-aba="painel">Painel</button>
+        <button type="button" data-aba="vender">Vender</button>
+        <button type="button" data-aba="produtos">Produtos</button>
+        <button type="button" data-aba="clientes">Clientes</button>
+        <button type="button" data-aba="historico">Histórico</button>
+        <button type="button" data-aba="acessos">Acessos</button>
+        <button type="button" data-aba="ajuda">Ajuda</button>
+      </nav>
+    </header>
+
+    <main id="conteudo" class="conteudo">
+
+      <!-- PAINEL -->
+      <section data-secao="painel" aria-labelledby="t-painel">
+        <h2 id="t-painel" tabindex="-1">Painel</h2>
+        <div id="painel-feedback" class="faixa faixa-info" hidden>
+          <span>Já testou o Caixa Fácil? Sua opinião ajuda muito (leva 2 minutos).</span>
+          <a class="botao botao-primario link-feedback" target="_blank" rel="noopener">Avaliar o app</a>
+        </div>
+        <div id="painel-inicio" class="faixa faixa-info" hidden>
+          <span>Comece cadastrando seus produtos. Se quiser só experimentar, carregue alguns exemplos.</span>
+          <span class="grupo-botoes">
+            <button type="button" class="botao botao-primario" data-ir="produtos">Cadastrar produtos</button>
+            <button type="button" class="botao" id="painel-exemplo">Usar exemplos</button>
+          </span>
+        </div>
+        <div class="cartoes" id="painel-cartoes"></div>
+        <div class="duas-colunas">
+          <div class="bloco">
+            <h3>Estoque baixo</h3>
+            <div id="painel-estoque"></div>
+          </div>
+          <div class="bloco">
+            <h3>Mais vendidos no mês</h3>
+            <div id="painel-mais-vendidos"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VENDER -->
+      <section data-secao="vender" aria-labelledby="t-vender" hidden>
+        <h2 id="t-vender" tabindex="-1">Nova venda</h2>
+        <form id="form-item" class="bloco formulario" novalidate>
+          <div class="campo">
+            <label for="venda-produto">Produto</label>
+            <select id="venda-produto" required></select>
+          </div>
+          <div class="campo campo-curto">
+            <label for="venda-qtd">Quantidade</label>
+            <input id="venda-qtd" type="number" inputmode="numeric" min="1" step="1" value="1" required>
+          </div>
+          <button type="submit" class="botao botao-primario">Adicionar</button>
+        </form>
+
+        <div class="bloco">
+          <h3>Itens desta venda</h3>
+          <div id="carrinho"></div>
+        </div>
+
+        <form id="form-venda" class="bloco formulario" novalidate>
+          <fieldset class="campo pagamentos">
+            <legend>Forma de pagamento</legend>
+            <label><input type="radio" name="pagamento" value="dinheiro" checked> Dinheiro</label>
+            <label><input type="radio" name="pagamento" value="pix"> Pix</label>
+            <label><input type="radio" name="pagamento" value="cartao"> Cartão</label>
+            <label><input type="radio" name="pagamento" value="fiado"> Fiado</label>
+          </fieldset>
+          <div class="campo">
+            <label for="venda-cliente">Cliente <span class="opcional" id="cliente-opcional">(opcional)</span></label>
+            <select id="venda-cliente"></select>
+          </div>
+          <div class="campo campo-curto" id="campo-recebido">
+            <label for="venda-recebido">Valor recebido (para calcular o troco)</label>
+            <input id="venda-recebido" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off">
+            <p class="dica" id="venda-troco" aria-live="polite"></p>
+          </div>
+          <button type="submit" class="botao botao-primario botao-grande" id="finalizar-venda">Finalizar venda</button>
+        </form>
+      </section>
+
+      <!-- PRODUTOS -->
+      <section data-secao="produtos" aria-labelledby="t-produtos" hidden>
+        <h2 id="t-produtos" tabindex="-1">Produtos</h2>
+        <form id="form-produto" class="bloco formulario" novalidate>
+          <h3 id="produto-titulo-form">Novo produto</h3>
+          <input type="hidden" name="id">
+          <div class="campo">
+            <label for="produto-nome">Nome do produto</label>
+            <input id="produto-nome" name="nome" type="text" maxlength="60" required>
+          </div>
+          <div class="campo campo-curto">
+            <label for="produto-preco">Preço de venda (R$)</label>
+            <input id="produto-preco" name="preco" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off" required>
+          </div>
+          <div class="campo campo-curto">
+            <label for="produto-estoque">Quantidade em estoque</label>
+            <input id="produto-estoque" name="estoque" type="number" inputmode="numeric" min="0" step="1" required>
+          </div>
+          <div class="campo campo-curto">
+            <label for="produto-minimo">Avisar quando o estoque chegar a</label>
+            <input id="produto-minimo" name="minimo" type="number" inputmode="numeric" min="0" step="1" placeholder="0">
+          </div>
+          <div class="grupo-botoes">
+            <button type="submit" class="botao botao-primario" id="produto-salvar">Cadastrar produto</button>
+            <button type="button" class="botao" id="produto-cancelar" hidden>Cancelar edição</button>
+          </div>
+        </form>
+
+        <div class="bloco">
+          <div class="campo">
+            <label for="produto-busca">Buscar produto</label>
+            <input id="produto-busca" type="search" autocomplete="off">
+          </div>
+          <div id="lista-produtos"></div>
+        </div>
+      </section>
+
+      <!-- CLIENTES -->
+      <section data-secao="clientes" aria-labelledby="t-clientes" hidden>
+        <h2 id="t-clientes" tabindex="-1">Clientes</h2>
+        <form id="form-cliente" class="bloco formulario" novalidate>
+          <h3 id="cliente-titulo-form">Novo cliente</h3>
+          <input type="hidden" name="id">
+          <div class="campo">
+            <label for="cliente-nome">Nome do cliente</label>
+            <input id="cliente-nome" name="nome" type="text" maxlength="60" autocomplete="off" required>
+          </div>
+          <div class="campo">
+            <label for="cliente-telefone">Telefone/WhatsApp com DDD <span class="opcional">(opcional)</span></label>
+            <input id="cliente-telefone" name="telefone" type="tel" inputmode="tel" placeholder="(11) 98765-4321" autocomplete="off">
+          </div>
+          <div class="grupo-botoes">
+            <button type="submit" class="botao botao-primario" id="cliente-salvar">Cadastrar cliente</button>
+            <button type="button" class="botao" id="cliente-cancelar" hidden>Cancelar edição</button>
+          </div>
+        </form>
+        <div class="bloco">
+          <div id="lista-clientes"></div>
+        </div>
+      </section>
+
+      <!-- HISTÓRICO -->
+      <section data-secao="historico" aria-labelledby="t-historico" hidden>
+        <h2 id="t-historico" tabindex="-1">Histórico de vendas</h2>
+        <form id="form-filtro" class="bloco formulario" novalidate>
+          <div class="campo campo-curto">
+            <label for="filtro-de">De</label>
+            <input id="filtro-de" type="date">
+          </div>
+          <div class="campo campo-curto">
+            <label for="filtro-ate">Até</label>
+            <input id="filtro-ate" type="date">
+          </div>
+          <div class="grupo-botoes">
+            <button type="submit" class="botao botao-primario">Filtrar</button>
+            <button type="button" class="botao" id="exportar-vendas">Baixar planilha (CSV)</button>
+          </div>
+        </form>
+        <div class="bloco">
+          <p id="historico-total" class="destaque" aria-live="polite"></p>
+          <div id="lista-vendas"></div>
+        </div>
+      </section>
+
+      <!-- ACESSOS -->
+      <section data-secao="acessos" aria-labelledby="t-acessos" hidden>
+        <h2 id="t-acessos" tabindex="-1">Registro de acessos</h2>
+        <div class="bloco">
+          <p>Cada vez que alguém entra no Caixa Fácil, ficam registrados o <strong>nome</strong>, a <strong>data</strong>, o <strong>horário</strong> e o tipo de aparelho. Abaixo estão os acessos feitos <strong>neste aparelho</strong>.</p>
+          <p id="acessos-central" class="dica"></p>
+          <button type="button" class="botao" id="exportar-acessos">Baixar planilha (CSV)</button>
+        </div>
+        <div class="bloco">
+          <div id="lista-acessos"></div>
+        </div>
+      </section>
+
+      <!-- AJUDA -->
+      <section data-secao="ajuda" aria-labelledby="t-ajuda" hidden>
+        <h2 id="t-ajuda" tabindex="-1">Ajuda</h2>
+
+        <div class="bloco" id="ajuda-feedback" hidden>
+          <h3>Dê sua opinião</h3>
+          <p>O Caixa Fácil é um projeto de extensão universitária. Conte o que achou: isso ajuda a melhorar a ferramenta.</p>
+          <a class="botao botao-primario link-feedback" target="_blank" rel="noopener">Avaliar o app</a>
+        </div>
+
+        <div class="bloco">
+          <h3>Como usar em 4 passos</h3>
+          <ol class="passos">
+            <li><strong>Produtos:</strong> cadastre o que você vende, com o preço e quanto tem em estoque.</li>
+            <li><strong>Clientes:</strong> cadastre quem compra fiado ou quem você quer lembrar (opcional).</li>
+            <li><strong>Vender:</strong> escolha os produtos, a forma de pagamento e finalize. O estoque baixa sozinho.</li>
+            <li><strong>Painel e Histórico:</strong> acompanhe quanto vendeu hoje e no mês, o que está acabando e quem está devendo.</li>
+          </ol>
+          <p>Errou uma venda? No <strong>Histórico</strong>, use “Cancelar”: o estoque volta automaticamente.</p>
+        </div>
+
+        <div class="bloco">
+          <h3>Acessibilidade</h3>
+          <ul>
+            <li>Use os botões <strong>A−</strong> e <strong>A+</strong> no topo para mudar o tamanho do texto.</li>
+            <li>O botão <strong>◐</strong> liga o modo de alto contraste.</li>
+            <li>Todo o aplicativo pode ser usado só pelo teclado (tecla Tab) e com leitores de tela.</li>
+          </ul>
+        </div>
+
+        <div class="bloco">
+          <h3>Seus dados</h3>
+          <p>Produtos, clientes e vendas ficam salvos <strong>apenas neste aparelho</strong>, no navegador. Ninguém mais tem acesso. Se trocar de celular ou limpar os dados do navegador, as informações se perdem. Por isso, faça cópias de segurança.</p>
+          <div class="grupo-botoes">
+            <button type="button" class="botao" id="backup-exportar">Baixar cópia de segurança</button>
+            <label class="botao" for="backup-importar">Restaurar cópia</label>
+            <input type="file" id="backup-importar" accept="application/json,.json" class="visualmente-oculto">
+            <button type="button" class="botao" id="ajuda-exemplo">Carregar exemplos</button>
+            <button type="button" class="botao botao-perigo" id="apagar-tudo">Apagar todos os dados</button>
+          </div>
+        </div>
+
+        <p class="rodape-texto">Caixa Fácil — projeto da Atividade Extensionista II, CST em Análise e Desenvolvimento de Sistemas, Centro Universitário Internacional UNINTER. Código aberto no <a href="https://github.com/Ricotta10/caixa-facil-uninter" target="_blank" rel="noopener">GitHub</a>.</p>
+      </section>
+    </main>
+  </div>
+
+  <div id="aviso" class="aviso" role="status" aria-live="polite" hidden></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/dados.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
