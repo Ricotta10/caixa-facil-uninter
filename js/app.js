@@ -185,6 +185,12 @@
     window.scrollTo(0, 0);
   }
 
+  // Permite usar o endereço (#vender, #produtos…) e o botão "voltar" do navegador.
+  window.addEventListener('hashchange', () => {
+    const nome = location.hash.slice(1);
+    if (!$('#app').hidden && SECOES.includes(nome)) mostrarAba(nome);
+  });
+
   document.addEventListener('click', (e) => {
     const alvo = e.target.closest('[data-aba], [data-ir]');
     if (!alvo) return;
@@ -404,7 +410,7 @@
       area.innerHTML = `<p class="vazio">${busca ? 'Nenhum produto encontrado.' : 'Nenhum produto cadastrado ainda.'}</p>`;
       return;
     }
-    area.innerHTML = `<div class="tabela-rolagem"><table>
+    area.innerHTML = `<div class="tabela-rolagem"><table class="tabela-cartoes">
       <caption>${plural(produtos.length, 'produto', 'produtos')}</caption>
       <thead><tr><th scope="col">Produto</th><th scope="col" class="numero">Preço</th><th scope="col" class="numero">Estoque</th><th scope="col"><span class="visualmente-oculto">Ações</span></th></tr></thead>
       <tbody>${produtos
@@ -414,8 +420,8 @@
             : p.estoque <= p.minimo ? ' <span class="selo selo-alerta">repor</span>' : '';
           return `<tr>
             <td>${esc(p.nome)}</td>
-            <td class="numero">${moeda(p.preco)}</td>
-            <td class="numero">${p.estoque}${selo}</td>
+            <td class="numero" data-rotulo="Preço">${moeda(p.preco)}</td>
+            <td class="numero" data-rotulo="Estoque">${p.estoque}${selo}</td>
             <td class="acoes">
               <button type="button" class="botao botao-pequeno" data-editar-produto="${esc(p.id)}" aria-label="Editar ${esc(p.nome)}">Editar</button>
               <button type="button" class="botao botao-pequeno botao-perigo" data-excluir-produto="${esc(p.id)}" aria-label="Excluir ${esc(p.nome)}">Excluir</button>
@@ -506,7 +512,7 @@
       area.innerHTML = '<p class="vazio">Nenhum cliente cadastrado ainda.</p>';
       return;
     }
-    area.innerHTML = `<div class="tabela-rolagem"><table>
+    area.innerHTML = `<div class="tabela-rolagem"><table class="tabela-cartoes">
       <caption>${plural(clientes.length, 'cliente', 'clientes')}</caption>
       <thead><tr><th scope="col">Cliente</th><th scope="col">Telefone</th><th scope="col" class="numero">Fiado em aberto</th><th scope="col"><span class="visualmente-oculto">Ações</span></th></tr></thead>
       <tbody>${clientes
@@ -517,8 +523,8 @@
             : '—';
           return `<tr>
             <td>${esc(c.nome)}</td>
-            <td>${zap}</td>
-            <td class="numero">${fiado ? `<span class="selo selo-alerta">${moeda(fiado)}</span>` : moeda(0)}</td>
+            <td data-rotulo="Telefone">${zap}</td>
+            <td class="numero" data-rotulo="Fiado em aberto">${fiado ? `<span class="selo selo-alerta">${moeda(fiado)}</span>` : moeda(0)}</td>
             <td class="acoes">
               ${fiado ? `<button type="button" class="botao botao-pequeno botao-primario" data-receber="${esc(c.id)}" aria-label="Receber fiado de ${esc(c.nome)}">Receber</button>` : ''}
               <button type="button" class="botao botao-pequeno" data-editar-cliente="${esc(c.id)}" aria-label="Editar ${esc(c.nome)}">Editar</button>
@@ -630,15 +636,15 @@
       fiado: '<span class="selo selo-alerta">Fiado</span>',
       cancelada: '<span class="selo selo-perigo">Cancelada</span>'
     };
-    area.innerHTML = `<div class="tabela-rolagem"><table>
+    area.innerHTML = `<div class="tabela-rolagem"><table class="tabela-cartoes">
       <thead><tr><th scope="col">Data</th><th scope="col">Itens</th><th scope="col">Cliente</th><th scope="col">Pagamento</th><th scope="col" class="numero">Total</th><th scope="col"><span class="visualmente-oculto">Ações</span></th></tr></thead>
       <tbody>${vendas
         .map((v) => `<tr${v.status === 'cancelada' ? ' class="cancelada"' : ''}>
           <td>${esc(dataHora(v.data))}</td>
-          <td>${v.itens.map((i) => `${i.qtd}x ${esc(i.nome)}`).join('<br>')}</td>
-          <td>${esc(v.clienteNome || 'Avulso')}</td>
-          <td>${NOMES_PAGAMENTO[v.pagamento]} ${selos[v.status]}</td>
-          <td class="numero">${moeda(v.total)}</td>
+          <td data-rotulo="Itens">${v.itens.map((i) => `${i.qtd}x ${esc(i.nome)}`).join(', ')}</td>
+          <td data-rotulo="Cliente">${esc(v.clienteNome || 'Avulso')}</td>
+          <td data-rotulo="Pagamento">${NOMES_PAGAMENTO[v.pagamento]} ${selos[v.status]}</td>
+          <td class="numero" data-rotulo="Total">${moeda(v.total)}</td>
           <td class="acoes">${v.status !== 'cancelada'
             ? `<button type="button" class="botao botao-pequeno botao-perigo" data-cancelar="${esc(v.id)}" aria-label="Cancelar venda de ${esc(dataHora(v.data))}">Cancelar</button>`
             : ''}</td>
@@ -690,7 +696,7 @@
       area.innerHTML = '<p class="vazio">Nenhum acesso registrado.</p>';
       return;
     }
-    area.innerHTML = `<div class="tabela-rolagem"><table>
+    area.innerHTML = `<div class="tabela-rolagem"><table class="tabela-cartoes">
       <caption>${plural(acessos.length, 'acesso', 'acessos')} neste aparelho</caption>
       <thead><tr><th scope="col">Data</th><th scope="col">Horário</th><th scope="col">Nome</th><th scope="col">Negócio</th><th scope="col">Evento</th><th scope="col">Aparelho</th></tr></thead>
       <tbody>${acessos
@@ -698,11 +704,11 @@
           const d = new Date(a.data);
           return `<tr>
             <td>${d.toLocaleDateString('pt-BR')}</td>
-            <td>${d.toLocaleTimeString('pt-BR')}</td>
-            <td>${esc(a.nome)}</td>
-            <td>${esc(a.negocio || '—')}</td>
-            <td>${esc(a.evento)}</td>
-            <td>${esc(a.dispositivo)}</td>
+            <td data-rotulo="Horário">${d.toLocaleTimeString('pt-BR')}</td>
+            <td data-rotulo="Nome">${esc(a.nome)}</td>
+            <td data-rotulo="Negócio">${esc(a.negocio || '—')}</td>
+            <td data-rotulo="Evento">${esc(a.evento)}</td>
+            <td data-rotulo="Aparelho">${esc(a.dispositivo)}</td>
           </tr>`;
         })
         .join('')}</tbody>

@@ -382,6 +382,19 @@ tr.cancelada td:not(.acoes) { text-decoration: line-through; color: var(--texto-
 @media (max-width: 479px) {
   .coluna-opcional { display: none; }
   th, td { padding: .55rem .35rem; }
+
+  /* Listas viram cartões empilhados no celular */
+  .tabela-cartoes thead { display: none; }
+  .tabela-cartoes, .tabela-cartoes tbody, .tabela-cartoes tr, .tabela-cartoes td { display: block; width: 100%; }
+  .tabela-cartoes caption { display: block; }
+  .tabela-cartoes tr { padding: .6rem 0; border-bottom: 1px solid var(--borda); }
+  .tabela-cartoes td { border: 0; padding: .15rem 0; text-align: left; }
+  .tabela-cartoes td.numero { text-align: left; }
+  .tabela-cartoes td:first-child { font-weight: 700; font-size: 1.05rem; }
+  .tabela-cartoes td[data-rotulo]::before { content: attr(data-rotulo) ": "; font-weight: 600; color: var(--texto-suave); }
+  .tabela-cartoes td.acoes { display: flex; flex-wrap: wrap; gap: .4rem; padding-top: .5rem; }
+  .tabela-cartoes td.acoes:empty { display: none; }
+  .tabela-cartoes td.acoes .botao + .botao { margin-left: 0; }
 }
 
 /* ---------------------------- Telas maiores ---------------------------- */
