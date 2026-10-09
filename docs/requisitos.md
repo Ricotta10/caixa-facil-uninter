@@ -22,12 +22,12 @@ Muitos pequenos empreendedores e trabalhadores informais (quem vende doces, salg
 | RF01 | Permitir a entrada no sistema informando o nome e, opcionalmente, o tipo de negócio, com consentimento explícito para o registro de acesso. |
 | RF02 | Registrar cada acesso com nome, data, horário, tipo de negócio, evento e tipo de aparelho, e exibir esse histórico na tela **Acessos**. |
 | RF03 | Enviar cada registro de acesso para uma planilha central (Google Apps Script), quando configurada. |
-| RF04 | Cadastrar, editar, buscar e excluir produtos (nome, preço de venda, quantidade em estoque e estoque mínimo). |
+| RF04 | Cadastrar, editar, buscar (sem diferenciar acentos) e excluir produtos (nome, preço de venda, quantidade em estoque e aviso de estoque mínimo opcional). |
 | RF05 | Cadastrar, editar e excluir clientes (nome e telefone/WhatsApp opcional). |
 | RF06 | Registrar vendas com um ou mais produtos, quantidade, cliente opcional e forma de pagamento (dinheiro, Pix, cartão ou fiado). |
 | RF07 | Baixar automaticamente o estoque a cada venda e impedir a venda de quantidade maior que o estoque. |
-| RF08 | Calcular o troco quando o pagamento for em dinheiro. |
-| RF09 | Exigir cliente identificado em vendas fiado, mostrar o valor em aberto por cliente e permitir registrar o recebimento. |
+| RF08 | Calcular o troco quando o pagamento for em dinheiro e impedir finalizar a venda se o valor recebido for menor que o total. |
+| RF09 | Exigir cliente identificado em vendas fiado, mostrar o valor em aberto por cliente e permitir registrar o recebimento total ou parcial. |
 | RF10 | Cancelar uma venda, devolvendo os produtos ao estoque. |
 | RF11 | Exibir um painel com o total vendido no dia e no mês, ticket médio, fiado a receber, produtos com estoque baixo e os mais vendidos do mês. |
 | RF12 | Listar o histórico de vendas filtrado por período e exportar para planilha (CSV). |
@@ -35,6 +35,8 @@ Muitos pequenos empreendedores e trabalhadores informais (quem vende doces, salg
 | RF14 | Gerar e restaurar uma cópia de segurança (backup) dos dados e permitir apagar todos os dados. |
 | RF15 | Oferecer dados de exemplo para quem quer apenas experimentar. |
 | RF16 | Disponibilizar um link para o formulário de avaliação (feedback). |
+| RF17 | Aplicar desconto em reais na venda. |
+| RF18 | Buscar produtos na tela de venda. |
 
 ## Requisitos não funcionais (RNF)
 
@@ -60,4 +62,15 @@ Muitos pequenos empreendedores e trabalhadores informais (quem vende doces, salg
 | RN04 | Um cliente com fiado em aberto não pode ser excluído. |
 | RN05 | Vendas canceladas não entram nos totais e devolvem os produtos ao estoque. |
 | RN06 | Ao excluir um produto, as vendas antigas mantêm o nome e o preço praticados na época. |
-| RN07 | Um produto aparece como "estoque baixo" quando a quantidade é menor ou igual ao estoque mínimo informado. |
+| RN07 | Um produto aparece como "estoque baixo" quando a quantidade é menor ou igual ao estoque mínimo informado. Se o aviso ficar em branco (por exemplo, peças únicas de bazar), o produto não gera alerta. |
+| RN08 | O desconto deve ser menor que o valor da venda. |
+| RN09 | Pagamentos parciais de fiado abatem primeiro as vendas mais antigas; a venda passa a "paga" quando o saldo zera. |
+
+## Histórico de versões
+
+| Versão | Data | Mudanças |
+|---|---|---|
+| 1.0 | 07/10/2026 | Primeira versão publicada. |
+| 1.1 | 09/10/2026 | Melhorias pedidas pelas participantes na avaliação: busca sem acentos (RF04), bloqueio de venda em dinheiro com valor recebido menor que o total (RF08), pagamento parcial de fiado (RF09/RN09), desconto na venda (RF17), busca na tela de venda (RF18) e aviso de estoque opcional para peças únicas (RN07). |
+
+**Trabalho futuro:** sincronizar os dados entre aparelhos (pedido de uma participante). Exigiria cadastro com login e armazenamento em servidor, o que muda a decisão atual de manter os dados apenas no aparelho, por privacidade (RNF04).

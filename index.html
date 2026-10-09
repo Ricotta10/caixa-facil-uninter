@@ -7,7 +7,7 @@
   <meta name="description" content="Ferramenta gratuita para pequenos empreendedores controlarem vendas, estoque, clientes e fiado direto no celular.">
   <meta name="theme-color" content="#0b6e4f">
   <link rel="icon" href="img/icone.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
   <a class="pular" href="#conteudo">Pular para o conteúdo</a>
@@ -107,6 +107,10 @@
         <h2 id="t-vender" tabindex="-1">Nova venda</h2>
         <form id="form-item" class="bloco formulario" novalidate>
           <div class="campo">
+            <label for="venda-busca">Buscar produto <span class="opcional">(opcional)</span></label>
+            <input id="venda-busca" type="search" autocomplete="off" placeholder="Digite parte do nome">
+          </div>
+          <div class="campo">
             <label for="venda-produto">Produto</label>
             <select id="venda-produto" required></select>
           </div>
@@ -133,6 +137,10 @@
           <div class="campo">
             <label for="venda-cliente">Cliente <span class="opcional" id="cliente-opcional">(opcional)</span></label>
             <select id="venda-cliente"></select>
+          </div>
+          <div class="campo campo-curto">
+            <label for="venda-desconto">Desconto em R$ <span class="opcional">(opcional)</span></label>
+            <input id="venda-desconto" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off">
           </div>
           <div class="campo campo-curto" id="campo-recebido">
             <label for="venda-recebido">Valor recebido (para calcular o troco)</label>
@@ -162,8 +170,8 @@
             <input id="produto-estoque" name="estoque" type="number" inputmode="numeric" min="0" step="1" required>
           </div>
           <div class="campo campo-curto">
-            <label for="produto-minimo">Avisar quando o estoque chegar a</label>
-            <input id="produto-minimo" name="minimo" type="number" inputmode="numeric" min="0" step="1" placeholder="0">
+            <label for="produto-minimo">Avisar quando o estoque chegar a <span class="opcional">(vazio = não avisar)</span></label>
+            <input id="produto-minimo" name="minimo" type="number" inputmode="numeric" min="0" step="1">
           </div>
           <div class="grupo-botoes">
             <button type="submit" class="botao botao-primario" id="produto-salvar">Cadastrar produto</button>
@@ -259,6 +267,8 @@
             <li><strong>Painel e Histórico:</strong> acompanhe quanto vendeu hoje e no mês, o que está acabando e quem está devendo.</li>
           </ol>
           <p>Errou uma venda? No <strong>Histórico</strong>, use “Cancelar”: o estoque volta automaticamente.</p>
+          <p>Vende peças únicas, como num bazar? Deixe vazio o campo “Avisar quando o estoque chegar a”: assim as peças vendidas não aparecem como alerta no Painel.</p>
+          <p>O cliente pagou só uma parte do fiado? Em <strong>Clientes</strong>, toque em “Receber” e digite o valor pago.</p>
         </div>
 
         <div class="bloco">
@@ -289,8 +299,8 @@
 
   <div id="aviso" class="aviso" role="status" aria-live="polite" hidden></div>
 
-  <script src="js/config.js?v=4"></script>
-  <script src="js/dados.js?v=4"></script>
-  <script src="js/app.js?v=4"></script>
+  <script src="js/config.js?v=5"></script>
+  <script src="js/dados.js?v=5"></script>
+  <script src="js/app.js?v=5"></script>
 </body>
 </html>

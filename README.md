@@ -26,12 +26,25 @@ O **Caixa Fácil** é uma aplicação web gratuita, que funciona no navegador do
 ## ✨ Funcionalidades
 
 - **Painel:** vendido hoje e no mês, ticket médio, fiado a receber, produtos com estoque baixo e mais vendidos.
-- **Vender:** carrinho com vários produtos, formas de pagamento (dinheiro, Pix, cartão e fiado) e cálculo de troco.
-- **Produtos:** cadastro, edição, busca e exclusão, com aviso de estoque baixo e baixa automática a cada venda.
-- **Clientes:** cadastro com WhatsApp, controle do fiado em aberto e registro de recebimento.
+- **Vender:** busca de produtos, carrinho com vários itens, desconto, formas de pagamento (dinheiro, Pix, cartão e fiado) e cálculo de troco com conferência do valor recebido.
+- **Produtos:** cadastro, edição, busca (sem diferenciar acentos) e exclusão, com aviso de estoque baixo opcional e baixa automática a cada venda.
+- **Clientes:** cadastro com WhatsApp, controle do fiado em aberto e recebimento total ou parcial.
 - **Histórico:** vendas por período, cancelamento com devolução ao estoque e exportação para planilha (CSV).
 - **Acessos:** registro de cada acesso (nome, data, horário e aparelho), com envio opcional para uma planilha central do Google.
 - **Ajuda:** guia de uso, cópia de segurança (backup), restauração, dados de exemplo e link para avaliação.
+
+## 🔄 Melhorias a partir das avaliações (versão 1.1, 09/10/2026)
+
+As participantes da comunidade testaram o app e responderam a um formulário de avaliação. A partir dos comentários delas:
+
+| O que foi relatado | O que mudou |
+|---|---|
+| A busca por "unicornio" (sem acento) não encontrava o produto | A busca ignora acentos e maiúsculas |
+| Uma venda em dinheiro foi finalizada com valor recebido menor que o total | O app avisa quanto falta e não deixa finalizar |
+| O fiado só podia ser pago de uma vez | Pagamento parcial, abatendo das vendas mais antigas |
+| No bazar, cada sapato é peça única: a lista cresce e os vendidos aparecem como esgotados no Painel | Busca na tela de venda e aviso de estoque opcional |
+| Não havia desconto na venda | Campo de desconto em reais |
+| Botões cortados no celular | Corrigido: as listas viram cartões em telas pequenas |
 
 ## ♿ Acessibilidade (7 princípios do Desenho Universal)
 

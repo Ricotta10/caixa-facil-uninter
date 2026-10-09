@@ -251,21 +251,35 @@
   // ---------------------------------------------------------------------
   let carrinho = []; // [{ produtoId, qtd }]
 
-  function totalCarrinho() {
+  function subtotalCarrinho() {
     return carrinho.reduce((soma, item) => {
       const p = Dados.obterProduto(item.produtoId);
       return soma + (p ? p.preco * item.qtd : 0);
     }, 0);
   }
 
+  /** Desconto digitado, se for válido (a validação definitiva é feita ao finalizar). */
+  function descontoCarrinho() {
+    const d = Dados.paraCentavos($('#venda-desconto').value);
+    return Number.isFinite(d) && d > 0 && d < subtotalCarrinho() ? d : 0;
+  }
+
+  const totalCarrinho = () => subtotalCarrinho() - descontoCarrinho();
+
   function renderVender() {
     // Remove do carrinho produtos que foram excluídos nesse meio-tempo.
     carrinho = carrinho.filter((i) => Dados.obterProduto(i.produtoId));
 
-    const produtos = Dados.listarProdutos();
+    const busca = Dados.normalizar($('#venda-busca').value);
+    const todos = Dados.listarProdutos();
+    const produtos = todos.filter((p) => Dados.normalizar(p.nome).includes(busca));
     const seletor = $('#venda-produto');
     const anterior = seletor.value;
-    seletor.innerHTML = produtos.length
+    seletor.innerHTML = !todos.length
+      ? '<option value="">Cadastre produtos primeiro</option>'
+      : !produtos.length
+      ? '<option value="">Nenhum produto encontrado</option>'
+      : produtos.length
       ? '<option value="">Escolha um produto…</option>' +
         produtos
           .map((p) => {
@@ -274,8 +288,11 @@
             return `<option value="${esc(p.id)}"${disponivel <= 0 ? ' disabled' : ''}>${esc(p.nome)} — ${moeda(p.preco)} (${disponivel > 0 ? `${disponivel} em estoque` : 'esgotado'})</option>`;
           })
           .join('')
-      : '<option value="">Cadastre produtos primeiro</option>';
+      : '';
     if ([...seletor.options].some((o) => o.value === anterior && !o.disabled)) seletor.value = anterior;
+    // Busca com um único resultado disponível: já deixa selecionado.
+    const disponiveis = [...seletor.options].filter((o) => o.value && !o.disabled);
+    if (busca && disponiveis.length === 1) seletor.value = disponiveis[0].value;
 
     const clientes = Dados.listarClientes();
     const seletorCliente = $('#venda-cliente');
@@ -312,7 +329,10 @@
     area.innerHTML = `<div class="tabela-rolagem"><table>
       <thead><tr><th scope="col">Produto</th><th scope="col" class="numero">Qtd.</th><th scope="col" class="numero coluna-opcional">Preço</th><th scope="col" class="numero">Subtotal</th><th scope="col"><span class="visualmente-oculto">Ações</span></th></tr></thead>
       <tbody>${linhas}</tbody>
-      <tfoot><tr><td colspan="2">Total da venda</td><td class="coluna-opcional"></td><td class="numero">${moeda(totalCarrinho())}</td><td></td></tr></tfoot>
+      <tfoot>${descontoCarrinho()
+        ? `<tr><td colspan="2">Subtotal</td><td class="coluna-opcional"></td><td class="numero">${moeda(subtotalCarrinho())}</td><td></td></tr>
+           <tr><td colspan="2">Desconto</td><td class="coluna-opcional"></td><td class="numero">− ${moeda(descontoCarrinho())}</td><td></td></tr>`
+        : ''}<tr><td colspan="2">Total da venda</td><td class="coluna-opcional"></td><td class="numero">${moeda(totalCarrinho())}</td><td></td></tr></tfoot>
     </table></div>`;
     $('#finalizar-venda').disabled = false;
     atualizarTroco();
@@ -343,6 +363,7 @@
     else carrinho.push({ produtoId, qtd });
     avisar(`${qtd}x ${produto.nome} adicionado.`);
     $('#venda-qtd').value = 1;
+    $('#venda-busca').value = '';
     renderVender();
     $('#venda-produto').value = '';
     $('#venda-produto').focus();
@@ -377,19 +398,30 @@
 
   $$('input[name="pagamento"]').forEach((r) => r.addEventListener('change', atualizarPagamento));
   $('#venda-recebido').addEventListener('input', atualizarTroco);
+  $('#venda-desconto').addEventListener('input', renderCarrinho);
+  $('#venda-busca').addEventListener('input', renderVender);
 
   $('#form-venda').addEventListener('submit', (e) => {
     e.preventDefault();
     const pagamento = pagamentoEscolhido();
     const r = tentar(() =>
-      Dados.registrarVenda({ itens: carrinho, clienteId: $('#venda-cliente').value, pagamento })
+      Dados.registrarVenda({
+        itens: carrinho,
+        clienteId: $('#venda-cliente').value,
+        pagamento,
+        desconto: $('#venda-desconto').value,
+        recebido: $('#venda-recebido').value
+      })
     );
     if (!r.ok) {
       if (pagamento === 'fiado' && !$('#venda-cliente').value) $('#venda-cliente').focus();
+      else if (/recebido/i.test($('#aviso').textContent)) $('#venda-recebido').focus();
+      else if (/desconto/i.test($('#aviso').textContent)) $('#venda-desconto').focus();
       return;
     }
     carrinho = [];
     $('#venda-recebido').value = '';
+    $('#venda-desconto').value = '';
     $('#venda-cliente').value = '';
     $('input[name="pagamento"][value="dinheiro"]').checked = true;
     renderVender();
@@ -401,10 +433,8 @@
   // Produtos
   // ---------------------------------------------------------------------
   function renderProdutos() {
-    const busca = $('#produto-busca').value.trim().toLocaleLowerCase('pt-BR');
-    const produtos = Dados.listarProdutos().filter((p) =>
-      p.nome.toLocaleLowerCase('pt-BR').includes(busca)
-    );
+    const busca = Dados.normalizar($('#produto-busca').value);
+    const produtos = Dados.listarProdutos().filter((p) => Dados.normalizar(p.nome).includes(busca));
     const area = $('#lista-produtos');
     if (produtos.length === 0) {
       area.innerHTML = `<p class="vazio">${busca ? 'Nenhum produto encontrado.' : 'Nenhum produto cadastrado ainda.'}</p>`;
@@ -417,7 +447,7 @@
         .map((p) => {
           const selo = p.estoque === 0
             ? ' <span class="selo selo-perigo">esgotado</span>'
-            : p.estoque <= p.minimo ? ' <span class="selo selo-alerta">repor</span>' : '';
+            : p.minimo != null && p.estoque <= p.minimo ? ' <span class="selo selo-alerta">repor</span>' : '';
           return `<tr>
             <td>${esc(p.nome)}</td>
             <td class="numero" data-rotulo="Preço">${moeda(p.preco)}</td>
@@ -478,7 +508,7 @@
       form.nome.value = p.nome;
       form.preco.value = (p.preco / 100).toFixed(2).replace('.', ',');
       form.estoque.value = p.estoque;
-      form.minimo.value = p.minimo;
+      form.minimo.value = p.minimo ?? '';
       $('#produto-titulo-form').textContent = `Editando: ${p.nome}`;
       $('#produto-salvar').textContent = 'Salvar alterações';
       $('#produto-cancelar').hidden = false;
@@ -596,11 +626,20 @@
     }
     if (receber) {
       const c = Dados.obterCliente(receber.dataset.receber);
-      const valor = c ? Dados.fiadoEmAberto(c.id) : 0;
-      if (!c || !confirm(`Confirmar que ${c.nome} pagou ${moeda(valor)} de fiado?`)) return;
-      const r = tentar(() => Dados.receberFiado(c.id));
+      if (!c) return;
+      const aberto = Dados.fiadoEmAberto(c.id);
+      const sugestao = (aberto / 100).toFixed(2).replace('.', ',');
+      const valor = prompt(
+        `${c.nome} deve ${moeda(aberto)}.
+Quanto foi pago agora? (para quitar tudo, mantenha ${sugestao})`,
+        sugestao
+      );
+      if (valor === null) return;
+      const r = tentar(() => Dados.receberFiado(c.id, valor));
       if (r.ok) {
-        avisar(`Recebido ${moeda(r.valor)} de ${c.nome}.`);
+        avisar(r.valor.emAberto
+          ? `Recebido ${moeda(r.valor.recebido)} de ${c.nome}. Ainda falta ${moeda(r.valor.emAberto)}.`
+          : `Recebido ${moeda(r.valor.recebido)} de ${c.nome}. Fiado quitado!`);
         renderClientes();
       }
     }
@@ -641,9 +680,9 @@
       <tbody>${vendas
         .map((v) => `<tr${v.status === 'cancelada' ? ' class="cancelada"' : ''}>
           <td>${esc(dataHora(v.data))}</td>
-          <td data-rotulo="Itens">${v.itens.map((i) => `${i.qtd}x ${esc(i.nome)}`).join(', ')}</td>
+          <td data-rotulo="Itens">${v.itens.map((i) => `${i.qtd}x ${esc(i.nome)}`).join(', ')}${v.desconto ? ` <span class="dica">(desconto de ${moeda(v.desconto)})</span>` : ''}</td>
           <td data-rotulo="Cliente">${esc(v.clienteNome || 'Avulso')}</td>
-          <td data-rotulo="Pagamento">${NOMES_PAGAMENTO[v.pagamento]} ${selos[v.status]}</td>
+          <td data-rotulo="Pagamento">${NOMES_PAGAMENTO[v.pagamento]} ${selos[v.status]}${v.status === 'fiado' && v.pago ? ` <span class="dica">(pago ${moeda(v.pago)})</span>` : ''}</td>
           <td class="numero" data-rotulo="Total">${moeda(v.total)}</td>
           <td class="acoes">${v.status !== 'cancelada'
             ? `<button type="button" class="botao botao-pequeno botao-perigo" data-cancelar="${esc(v.id)}" aria-label="Cancelar venda de ${esc(dataHora(v.data))}">Cancelar</button>`

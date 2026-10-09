@@ -13,7 +13,7 @@ assert.ok(Number.isNaN(D.paraCentavos('1,234')));
 
 // produtos
 const bolo = D.salvarProduto({ nome: 'Bolo', preco: '8,00', estoque: '5', minimo: '' });
-assert.strictEqual(bolo.minimo, 0);
+assert.strictEqual(bolo.minimo, null, 'aviso de estoque vazio = não avisar');
 erro(() => D.salvarProduto({ nome: 'bolo', preco: '1', estoque: 1 }), /Já existe/);
 erro(() => D.salvarProduto({ nome: 'X', preco: '0', estoque: 1 }), /maior que zero/);
 erro(() => D.salvarProduto({ nome: 'X', preco: '1', estoque: '1.5' }), /inteiro/);
@@ -47,7 +47,7 @@ assert.strictEqual(r.ticketMedio, 1700);
 assert.deepStrictEqual(r.estoqueBaixo.map(p => p.nome), ['Coxinha']);
 assert.strictEqual(r.maisVendidos[0].nome, 'Coxinha');
 
-assert.strictEqual(D.receberFiado(maria.id), 1200);
+assert.deepStrictEqual(D.receberFiado(maria.id), { recebido: 1200, emAberto: 0 });
 assert.strictEqual(D.fiadoEmAberto(maria.id), 0);
 
 D.cancelarVenda(v1.id);
@@ -89,4 +89,45 @@ erro(() => D.importarBackup('lixo'), /inválido/);
 D.apagarTudo();
 assert.strictEqual(D.carregarExemplo(), 7);
 assert.strictEqual(D.carregarExemplo(), 0);
+
+// ---- Melhorias pedidas nas avaliações (09/10/2026) ----
+D.apagarTudo();
+// 1. busca sem acento
+assert.strictEqual(D.normalizar('Unicórnio Mágico'), 'unicornio magico');
+assert.ok(D.normalizar('Forminha Unicórnio').includes(D.normalizar('unicornio')));
+
+const forminha = D.salvarProduto({ nome: 'Forminha unicórnio', preco: '1,50', estoque: 100, minimo: 20 });
+const sapato = D.salvarProduto({ nome: 'Sapato peça única', preco: '60', estoque: 1, minimo: '' });
+const ana = D.salvarCliente({ nome: 'Ana' });
+
+// 2. dinheiro com valor recebido menor que o total é bloqueado
+erro(() => D.registrarVenda({ itens: [{ produtoId: forminha.id, qtd: 10 }], pagamento: 'dinheiro', recebido: '10,00' }), /menor que o total/);
+assert.strictEqual(D.obterProduto(forminha.id).estoque, 100, 'estoque intacto após recusa');
+const vd = D.registrarVenda({ itens: [{ produtoId: forminha.id, qtd: 10 }], pagamento: 'dinheiro', recebido: '20,00' });
+assert.strictEqual(vd.recebido, 2000);
+
+// 6. desconto
+const vdesc = D.registrarVenda({ itens: [{ produtoId: sapato.id, qtd: 1 }], pagamento: 'pix', desconto: '10,00' });
+assert.deepStrictEqual([vdesc.subtotal, vdesc.desconto, vdesc.total], [6000, 1000, 5000]);
+erro(() => D.registrarVenda({ itens: [{ produtoId: forminha.id, qtd: 1 }], pagamento: 'pix', desconto: '1,50' }), /desconto precisa ser menor/);
+erro(() => D.registrarVenda({ itens: [{ produtoId: forminha.id, qtd: 1 }], pagamento: 'pix', desconto: 'abc' }), /Desconto inválido/);
+
+// 5. peça única esgotada sem aviso não aparece no Painel
+assert.strictEqual(D.obterProduto(sapato.id).estoque, 0);
+assert.deepStrictEqual(D.resumo().estoqueBaixo.map((p) => p.nome), []);
+
+// 3. fiado com pagamento parcial (abate das vendas mais antigas)
+const f1 = D.registrarVenda({ itens: [{ produtoId: forminha.id, qtd: 20 }], clienteId: ana.id, pagamento: 'fiado' }); // 30,00
+const f2 = D.registrarVenda({ itens: [{ produtoId: forminha.id, qtd: 10 }], clienteId: ana.id, pagamento: 'fiado' }); // 15,00
+assert.strictEqual(D.fiadoEmAberto(ana.id), 4500);
+erro(() => D.receberFiado(ana.id, '50,00'), /maior que o fiado/);
+erro(() => D.receberFiado(ana.id, '0'), /Informe o valor/);
+assert.deepStrictEqual(D.receberFiado(ana.id, '35,00'), { recebido: 3500, emAberto: 1000 });
+assert.strictEqual(D.listarVendas().find((v) => v.id === f1.id).status, 'paga');
+assert.strictEqual(D.listarVendas().find((v) => v.id === f2.id).pago, 500);
+assert.strictEqual(D.resumo().aReceber, 1000);
+assert.deepStrictEqual(D.receberFiado(ana.id), { recebido: 1000, emAberto: 0 });
+assert.strictEqual(D.resumo().aReceber, 0);
+assert.ok(D.vendasCSV(D.listarVendas()).includes('Desconto (R$)'));
+
 console.log('OK: todas as regras de negócio passaram');

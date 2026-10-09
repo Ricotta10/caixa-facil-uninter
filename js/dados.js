@@ -108,6 +108,11 @@ const Dados = (() => {
     return String(t ?? '').replace(/\D/g, '');
   }
 
+  /** Minúsculas e sem acentos, para buscas ("unicornio" encontra "Unicórnio"). */
+  function normalizar(t) {
+    return String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+
   const mesmoTexto = (a, b) =>
     a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }) === 0;
 
@@ -130,11 +135,10 @@ const Dados = (() => {
       nome,
       preco: preco(dados.preco, 'Preço de venda'),
       estoque: inteiro(dados.estoque, 'Quantidade em estoque', 0),
-      minimo: inteiro(
-        String(dados.minimo ?? '').trim() === '' ? 0 : dados.minimo,
-        'Avisar quando o estoque chegar a',
-        0
-      )
+      // Vazio = não avisar (útil para peças únicas, como em bazares).
+      minimo: String(dados.minimo ?? '').trim() === ''
+        ? null
+        : inteiro(dados.minimo, 'Avisar quando o estoque chegar a', 0)
     };
 
     const duplicado = estado.produtos.find((p) => p.id !== dados.id && mesmoTexto(p.nome, nome));
@@ -206,25 +210,48 @@ const Dados = (() => {
     salvar();
   }
 
+  const saldoVenda = (v) => v.total - (v.pago || 0);
+
   function fiadoEmAberto(clienteId) {
     return estado.vendas
       .filter((v) => v.status === 'fiado' && v.clienteId === clienteId)
-      .reduce((soma, v) => soma + v.total, 0);
+      .reduce((soma, v) => soma + saldoVenda(v), 0);
   }
 
-  function receberFiado(clienteId) {
-    const agora = new Date().toISOString();
-    let recebido = 0;
-    for (const v of estado.vendas) {
-      if (v.status === 'fiado' && v.clienteId === clienteId) {
-        v.status = 'paga';
-        v.pagoEm = agora;
-        recebido += v.total;
+  /**
+   * Registra um pagamento de fiado. Sem valor, quita tudo; com valor, abate
+   * das vendas mais antigas primeiro (pagamento parcial).
+   */
+  function receberFiado(clienteId, valor) {
+    const aberto = fiadoEmAberto(clienteId);
+    if (aberto === 0) throw new Error('Este cliente não tem fiado em aberto.');
+    let restante = aberto;
+    if (valor !== undefined && String(valor).trim() !== '') {
+      restante = paraCentavos(valor);
+      if (!Number.isFinite(restante) || restante <= 0) {
+        throw new Error('Informe o valor recebido, por exemplo 10,00.');
+      }
+      if (restante > aberto) {
+        throw new Error(`O valor é maior que o fiado em aberto (${moeda(aberto)}).`);
       }
     }
-    if (recebido === 0) throw new Error('Este cliente não tem fiado em aberto.');
+    const agora = new Date().toISOString();
+    const recebido = restante;
+    const fiados = estado.vendas
+      .filter((v) => v.status === 'fiado' && v.clienteId === clienteId)
+      .sort((a, b) => a.data.localeCompare(b.data));
+    for (const v of fiados) {
+      if (restante === 0) break;
+      const abate = Math.min(restante, saldoVenda(v));
+      v.pago = (v.pago || 0) + abate;
+      restante -= abate;
+      if (saldoVenda(v) === 0) {
+        v.status = 'paga';
+        v.pagoEm = agora;
+      }
+    }
     salvar();
-    return recebido;
+    return { recebido, emAberto: aberto - recebido };
   }
 
   // ---------------------------------------------------------------------
@@ -232,7 +259,8 @@ const Dados = (() => {
   // ---------------------------------------------------------------------
   /**
    * Registra uma venda e baixa o estoque.
-   * @param {{itens: {produtoId: string, qtd: number}[], clienteId?: string, pagamento: string}} dados
+   * @param {{itens: {produtoId: string, qtd: number}[], clienteId?: string, pagamento: string,
+   *          desconto?: string, recebido?: string}} dados
    */
   function registrarVenda(dados) {
     const itensInformados = Array.isArray(dados.itens) ? dados.itens : [];
@@ -264,6 +292,26 @@ const Dados = (() => {
       itens.push({ produtoId, nome: produto.nome, preco: produto.preco, qtd });
     }
 
+    const subtotal = itens.reduce((soma, i) => soma + i.preco * i.qtd, 0);
+    let desconto = 0;
+    if (String(dados.desconto ?? '').trim() !== '') {
+      desconto = paraCentavos(dados.desconto);
+      if (!Number.isFinite(desconto) || desconto < 0) {
+        throw new Error('Desconto inválido. Use um valor como 5,00.');
+      }
+      if (desconto >= subtotal) throw new Error('O desconto precisa ser menor que o valor da venda.');
+    }
+    const total = subtotal - desconto;
+
+    let recebido = null;
+    if (pagamento === 'dinheiro' && String(dados.recebido ?? '').trim() !== '') {
+      recebido = paraCentavos(dados.recebido);
+      if (!Number.isFinite(recebido)) throw new Error('Valor recebido inválido. Use um valor como 50,00.');
+      if (recebido < total) {
+        throw new Error(`O valor recebido é menor que o total da venda. Faltam ${moeda(total - recebido)}.`);
+      }
+    }
+
     for (const item of itens) obterProduto(item.produtoId).estoque -= item.qtd;
 
     const venda = {
@@ -273,7 +321,10 @@ const Dados = (() => {
       clienteNome: cliente ? cliente.nome : '',
       itens,
       pagamento,
-      total: itens.reduce((soma, i) => soma + i.preco * i.qtd, 0),
+      subtotal,
+      desconto,
+      total,
+      recebido,
       status: pagamento === 'fiado' ? 'fiado' : 'paga'
     };
     estado.vendas.push(venda);
@@ -335,9 +386,9 @@ const Dados = (() => {
       mesTotal,
       mesQtd: doMes.length,
       ticketMedio: doMes.length ? Math.round(mesTotal / doMes.length) : 0,
-      aReceber: soma(validas.filter((v) => v.status === 'fiado')),
+      aReceber: validas.filter((v) => v.status === 'fiado').reduce((s, v) => s + saldoVenda(v), 0),
       estoqueBaixo: estado.produtos
-        .filter((p) => p.estoque <= p.minimo)
+        .filter((p) => p.minimo != null && p.estoque <= p.minimo)
         .sort((a, b) => a.estoque - b.estoque),
       maisVendidos: [...porProduto.values()].sort((a, b) => b.qtd - a.qtd).slice(0, 5),
       totalProdutos: estado.produtos.length,
@@ -398,7 +449,7 @@ const Dados = (() => {
   function vendasCSV(vendas) {
     const nomesPagamento = { dinheiro: 'Dinheiro', pix: 'Pix', cartao: 'Cartão', fiado: 'Fiado' };
     return csv([
-      ['Data', 'Hora', 'Cliente', 'Itens', 'Pagamento', 'Situação', 'Total (R$)'],
+      ['Data', 'Hora', 'Cliente', 'Itens', 'Pagamento', 'Situação', 'Desconto (R$)', 'Total (R$)'],
       ...vendas.map((v) => [
         data(v.data),
         hora(v.data),
@@ -406,6 +457,7 @@ const Dados = (() => {
         v.itens.map((i) => `${i.qtd}x ${i.nome}`).join(', '),
         nomesPagamento[v.pagamento],
         { paga: 'Paga', fiado: 'Fiado em aberto', cancelada: 'Cancelada' }[v.status],
+        decimal(v.desconto || 0),
         decimal(v.total)
       ])
     ]);
@@ -478,6 +530,7 @@ const Dados = (() => {
   return {
     PAGAMENTOS,
     moeda,
+    normalizar,
     paraCentavos,
     diaLocal,
     somenteDigitos,
